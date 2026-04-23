@@ -1,0 +1,11 @@
+from helper.consts import D
+
+
+def mkdir_all():
+    """ディレクトリを作成"""
+    D().data.mkdir(parents=True, exist_ok=True)
+    D().storage.mkdir(parents=True, exist_ok=True)
+    D().lancedb.mkdir(parents=True, exist_ok=True)
+    D().models.mkdir(parents=True, exist_ok=True)
+    D().llm.mkdir(parents=True, exist_ok=True)
+    D().embedding.mkdir(parents=True, exist_ok=True)
