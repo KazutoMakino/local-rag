@@ -1,0 +1,127 @@
+#######################################################################################
+# main.py
+#######################################################################################
+# LLM に投げる文章
+query_str: |
+  日本政府はベンチャーやスタートアップに何を望んでいますか？
+
+# LLM に投げる文章のテンプレート
+text_qa_template: |
+  資料を基に、以下の質問に結論ファーストで回答してください。
+  回答には、根拠となった情報のファイルパスを「参照: [ファイルパス]」という形式で文末に記載してください。
+
+  ---
+  資料情報: {context_str}
+  質問: {query_str}
+  回答:
+
+# 比較対象となるベクトル DB のテーブル名称
+text_table: text_table
+summary_table: summary_table
+
+# local LLM モデル
+llm: gemma-4-E4B-it-Q4_K_M
+gemma-2-2b:
+  downloader:
+    repo_id: lmstudio-community/gemma-2-2b-it-GGUF
+    filename: gemma-2-2b-it-Q4_K_M.gguf
+  params:
+    temperature: 0.1
+    max_new_tokens: 512
+    context_window: 8192
+    model_kwargs:
+        n_ctx: 8192
+        n_gpu_layers: 1
+        n_threads: 6
+        repeat_penalty: 1.2
+        stop:
+          - 質問
+          - \n\n
+gemma-2-9b:
+  downloader:
+    repo_id: bartowski/gemma-2-9b-it-GGUF
+    filename: gemma-2-9b-it-Q4_K_M.gguf
+  params:
+    temperature: 0.1
+    max_new_tokens: 1024
+    context_window: 8192
+    model_kwargs:
+        n_ctx: 8192
+        n_gpu_layers: 1
+        n_threads: 6
+        repeat_penalty: 1.2
+        stop:
+          - 質問
+          - \n\n
+gemma-4-E4B-it-Q4_K_M:
+  downloader:
+    repo_id: lmstudio-community/gemma-4-E4B-it-GGUF
+    filename: gemma-4-E4B-it-Q4_K_M.gguf
+  params:
+    temperature: 0.3
+    max_new_tokens: 512
+    context_window: 8192
+    model_kwargs:
+        n_ctx: 8192
+        n_gpu_layers: 1
+        n_threads: 6
+        repeat_penalty: 1.15
+        stop:
+          - 質問
+          - \n\n
+#
+# embedding モデル
+embedding: ruri-v3-130m
+multilingual-e5-small:
+  downloader:
+    repo_id: intfloat/multilingual-e5-small
+multilingual-e5-large:
+  downloader:
+    repo_id: intfloat/multilingual-e5-large
+ruri-v3-310m:
+  downloader:
+    repo_id: cl-nagoya/ruri-v3-310m
+ruri-v3-130m:
+  downloader:
+    repo_id: cl-nagoya/ruri-v3-130m
+#
+# データの所在（`{repo.}/data/` からの相対パスを推奨）
+# dir_data: 2025/20250401_DX室_JEPX_PoC_上半期_完了
+dir_data: dummy/kokkai
+#
+# ファイル更新を確認するための json `{repo.}/.cache/` からの相対パスを推奨）
+file_tracker: state_tracker.json
+#
+# RAG で取得可能なファイル形式 (word における旧式の拡張子 .doc は読み取り不可)
+list_file_ext:
+  - .pdf
+  - .txt
+  - .docx
+  # - .xlsx
+  # - .doc
+  # - .xls
+#
+# summary 作成用
+summary_prompt: |
+  以下のテキストを分析し、指定されたフォーマットで出力してください。
+  余計な説明は一切不要です。名簿は無視してください。
+
+  [SUMMARY]
+  100文字程度の概要を記述
+
+  [KEYWORDS]
+  キーワード1, キーワード2, キーワード3
+
+  [TYPE]
+  文書の種類
+
+  [DATE]
+  日付（不明なら不明）
+
+  【テキスト】
+  {text}
+#
+
+similarity_top_k: 3
+streaming: true
+response_mode: compact
