@@ -7,8 +7,14 @@ query_str: |
 
 # LLM に投げる文章のテンプレート
 text_qa_template: |
-  資料を基に、以下の質問に結論ファーストで回答してください。
-  回答には、根拠となった情報のファイルパスを「参照: [ファイルパス]」という形式で文末に記載してください。
+  あなたは熟練したデータアナリストです。
+  提供された資料を基に、質問に対して結論から簡潔に回答してください。
+
+  制約事項:
+  1. 回答はあなたの言葉で要約し、資料からの直接的な長文引用は避けてください。
+  2. 根拠となる情報は、文末に「参照: [ファイルパス]」という形式で明記してください。
+  3. 以前の質問や回答は一切繰り返さないでください。
+  4. 回答が終わったらそれ以上は何も生成しないでください。
 
   ---
   資料情報: {context_str}
@@ -30,45 +36,51 @@ gemma-2-2b:
     max_new_tokens: 512
     context_window: 8192
     model_kwargs:
-        n_ctx: 8192
-        n_gpu_layers: 1
-        n_threads: 6
-        repeat_penalty: 1.2
-        stop:
-          - 質問
-          - \n\n
+      n_ctx: 8192
+      n_gpu_layers: 1
+      n_threads: 6
+      repeat_penalty: 1.15
+      stop_sequences:
+          - "---"
+          - "質問:"
+          - "回答:"
+          - "User:"
 gemma-2-9b:
   downloader:
     repo_id: bartowski/gemma-2-9b-it-GGUF
     filename: gemma-2-9b-it-Q4_K_M.gguf
   params:
     temperature: 0.1
-    max_new_tokens: 1024
+    max_new_tokens: 512
     context_window: 8192
     model_kwargs:
-        n_ctx: 8192
-        n_gpu_layers: 1
-        n_threads: 6
-        repeat_penalty: 1.2
-        stop:
-          - 質問
-          - \n\n
+      n_ctx: 8192
+      n_gpu_layers: 1
+      n_threads: 6
+      repeat_penalty: 1.15
+      stop_sequences:
+          - "---"
+          - "質問:"
+          - "回答:"
+          - "User:"
 gemma-4-E4B-it-Q4_K_M:
   downloader:
     repo_id: lmstudio-community/gemma-4-E4B-it-GGUF
     filename: gemma-4-E4B-it-Q4_K_M.gguf
   params:
-    temperature: 0.3
+    temperature: 0.1
     max_new_tokens: 512
     context_window: 8192
     model_kwargs:
-        n_ctx: 8192
-        n_gpu_layers: 1
-        n_threads: 6
-        repeat_penalty: 1.15
-        stop:
-          - 質問
-          - \n\n
+      n_ctx: 8192
+      n_gpu_layers: 1
+      n_threads: 6
+      repeat_penalty: 1.15
+      stop_sequences:
+          - "---"
+          - "質問:"
+          - "回答:"
+          - "User:"
 #
 # embedding モデル
 embedding: ruri-v3-130m

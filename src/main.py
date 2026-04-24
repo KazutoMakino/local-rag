@@ -7,6 +7,7 @@ os.environ["OMP_NUM_THREADS"] = "6"
 os.environ["MKL_NUM_THREADS"] = "6"
 
 import gc
+import shutil
 from pathlib import Path
 
 import lancedb
@@ -77,12 +78,10 @@ def main():
     gc.collect()
 
     L.info("二段階検索の実行")
-    query_txt = cfg.query_str
-    gc.collect()
 
     L.info("要約インデックスで関連ファイルパスを特定")
     summary_retriever = summary_index.as_retriever(similarity_top_k=cfg.similarity_top_k)
-    summary_nodes = summary_retriever.retrieve(query_txt)
+    summary_nodes = summary_retriever.retrieve(cfg.query_str)
     gc.collect()
 
     L.info("検索対象パスの抽出 (メタデータの file_path を使用)")
@@ -104,7 +103,7 @@ def main():
     # 検索対象ノードが空でないか確認
     if len(target_paths) == 0:
         L.info(
-            f"検索クエリ: 「{query_txt}」 に合致する情報が記載されていそうなファイルはありませんでした。"
+            f"検索クエリ: 「{cfg.query_str}」 に合致する情報が記載されていそうなファイルはありませんでした。"
         )
         return
 
@@ -117,9 +116,9 @@ def main():
     gc.collect()
 
     L.info("本文インデックスにフィルタを適用してRAG実行")
-    filters = MetadataFilters(
-        filters=[ExactMatchFilter(key="file_path", value=p) for p in target_paths], condition="or"
-    )
+    # filters = MetadataFilters(
+    #     filters=[ExactMatchFilter(key="file_path", value=p) for p in target_paths], condition="or"
+    # )
     query_engine = full_text_index.as_query_engine(
         # filters=filters,
         filters=None,
@@ -129,15 +128,21 @@ def main():
         streaming=cfg.streaming,
     )
 
-    response = query_engine.query(query_txt)
+    response = query_engine.query(cfg.query_str)
     gc.collect()
 
     L.info("ストリームを逐次出力")
-    full_res: str = ""
+    full_res_list: list[str] = []
     for token in response.response_gen:
-        full_res += token
+        full_res_list.append(token)
+    full_res = "".join(full_res_list).strip()
     print()
     L.info(f"回答： {full_res}")
+
+    path_output = D().output / "output.txt"
+    with path_output.open(mode="w", encoding="utf-8") as f:
+        f.write(full_res)
+    shutil.copy2(src=D().helper / "cfg.yml", dst=D().output)
 
     gc.collect()
 
@@ -160,13 +165,13 @@ def build_dual_indices(cfg: Cfg):
         if t in db.list_tables():
             db.drop_table(t)
 
-    L.info("本文インデックス作成中...")
     data_dir = D().data / cfg.dir_data
     all_files = sorted(data_dir.rglob("*.txt"))
-    summary_files = [str(f) for f in all_files if f.name.endswith("_summary.txt")]
+
+    L.info("本文インデックス作成中...")
     text_files = [str(f) for f in all_files if not f.name.endswith("_summary.txt")]
-    text_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=cfg.text_table)
     text_reader = SimpleDirectoryReader(input_files=text_files, file_metadata=get_meta)
+    text_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=cfg.text_table)
     text_docs = text_reader.load_data()
     for doc in text_docs:
         doc.doc_id = doc.metadata["file_path"]
@@ -177,8 +182,9 @@ def build_dual_indices(cfg: Cfg):
     )
 
     L.info("要約インデックス作成中...")
-    summary_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=cfg.summary_table)
+    summary_files = [str(f) for f in all_files if f.name.endswith("_summary.txt")]
     summary_reader = SimpleDirectoryReader(input_files=summary_files, file_metadata=get_meta)
+    summary_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=cfg.summary_table)
     summary_docs = summary_reader.load_data()
     for doc in summary_docs:
         doc.doc_id = doc.metadata["file_path"]

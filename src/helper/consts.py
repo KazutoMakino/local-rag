@@ -1,5 +1,6 @@
 """Constant values."""
 
+import datetime
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -12,6 +13,7 @@ class D(BaseModel):
     src: Path = repo / "src"
     helper: Path = src / "helper"
     data: Path = repo / "data"
+    output: Path = data / f"output/{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
     # local LLM 用
     cache: Path = repo / ".cache"
