@@ -2,9 +2,8 @@
 
 from pathlib import Path
 
+from logs import logger_instance
 from yaml import safe_load
-
-from helper.logs import logger_instance
 
 L = logger_instance()
 
@@ -45,10 +44,12 @@ class Cfg:
         # local LLM モデル
         self.llm_name: str = cfg["llm"]
         self.llm_downloader: dict = cfg[self.llm_name]["downloader"]
+        self.llm_revision_hash: str = cfg[self.llm_name]["revision_hash"]
         self.llm_params: dict = cfg[self.llm_name]["params"]
         # embedding モデル
         self.embedding_name: str = cfg["embedding"]
         self.embedding_downloader: dict = cfg[self.embedding_name]["downloader"]
+        self.embedding_revision_hash: str = cfg[self.embedding_name]["revision_hash"]
 
         # # その他の設定値
         # プロンプトに使用するパラメータ

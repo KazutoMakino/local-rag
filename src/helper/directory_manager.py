@@ -1,6 +1,6 @@
 """ディレクトリマネージャー"""
 
-from helper.consts import D
+from consts import D
 
 
 def mkdir_all():
