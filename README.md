@@ -46,6 +46,28 @@ python -m pip install uv
 
 インストール後、PowerShell を再起動するか環境変数を反映させて、uv --version が実行できることを確認してください。
 
+## 🔑 Hugging Face トークンの設定
+
+モデルのダウンロード等に認証が必要な場合があるため、Hugging Faceのアクセストークンを設定します。
+
+### トークンの取得:
+
+Hugging Face Settings/Tokens にアクセスします。  
+New token をクリックし、適切な権限（Readで十分です）を選択してトークンを生成・コピーしてください。
+
+### .env ファイルの作成:
+
+プロジェクトルートに .env という名前のファイルを新規作成し、以下の形式でトークンを記述します。
+```text
+HF_TOKEN=your_access_token_here
+```
+※ your_access_token_here の部分を、先ほどコピーした自身のトークンに置き換えてください。
+
+⚠️ 注意事項
+
+.env ファイルは絶対にGitHubへプッシュしないでください。  
+リポジトリをクローンした直後の .gitignore には通常 .env が含まれているはずですが、念のため確認してください。
+
 ## 🚀 環境構築
 
 ### 1. リポジトリのクローン
@@ -55,6 +77,12 @@ GitHub CLI を用いてリポジトリをクローンします。
 ```powershell
 gh repo clone KazutoMakino/local-rag
 cd local-rag
+```
+
+もしも、例えば会社の規定などの影響で winget 経由で GitHub CLI がインストール不可の場合は、git を[公式サイト](https://git-scm.com/install/windows)からダウンロードし、git のユーザ名／メールアドレスを設定の後、以下コマンドにて clone してください。
+
+```powershell
+git clone https://github.com/KazutoMakino/local-rag.git
 ```
 
 ### 2. 依存関係のインストール
