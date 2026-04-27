@@ -73,7 +73,7 @@ def get_kokkai_data(keyword: str) -> dict[str, str]:
     # ベースとなるURL
     base_url = "https://kokkai.ndl.go.jp/api/1.0/speech"
     # クエリパラメータを辞書で定義
-    params = {"maximumRecords": 100, "any": keyword}
+    params = {"maximumRecords": 50, "any": keyword}
     # リクエストを送信
     response = requests.get(base_url, params=params)
     # エラーがあれば例外を発生させる
