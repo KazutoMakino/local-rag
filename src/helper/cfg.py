@@ -2,8 +2,9 @@
 
 from pathlib import Path
 
-from logs import logger_instance
 from yaml import safe_load
+
+from helper.logs import logger_instance
 
 L = logger_instance()
 

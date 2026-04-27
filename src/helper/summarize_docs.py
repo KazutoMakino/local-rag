@@ -5,13 +5,14 @@ import os
 # OpenMPのスレッド数、Intel MKL 系を制限
 os.environ["OMP_NUM_THREADS"] = "6"
 os.environ["MKL_NUM_THREADS"] = "6"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
 
 import gc
 import re
 from pathlib import Path
 
-from logs import logger_instance
+from helper.logs import logger_instance
 
 # logger のインスタンス作成
 L = logger_instance()
