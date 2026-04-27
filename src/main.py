@@ -5,6 +5,7 @@ import os
 # OpenMPのスレッド数、Intel MKL 系を制限
 os.environ["OMP_NUM_THREADS"] = "6"
 os.environ["MKL_NUM_THREADS"] = "6"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
 import gc
 import shutil

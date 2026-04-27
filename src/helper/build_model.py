@@ -5,17 +5,19 @@ import os
 # OpenMPのスレッド数、Intel MKL 系を制限
 os.environ["OMP_NUM_THREADS"] = "6"
 os.environ["MKL_NUM_THREADS"] = "6"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
 from pathlib import Path
 
-from cfg import Cfg
-from consts import D
 from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download, snapshot_download
 from llama_index.core import Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.llama_cpp import LlamaCPP
-from logs import logger_instance, save_traceback
+
+from helper.cfg import Cfg
+from helper.consts import D
+from helper.logs import logger_instance, save_traceback
 
 # logger のインスタンス作成
 L = logger_instance()
