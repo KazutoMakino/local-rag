@@ -11,7 +11,7 @@ import gc
 import re
 from pathlib import Path
 
-from helper.logs import logger_instance
+from logs import logger_instance
 
 # logger のインスタンス作成
 L = logger_instance()

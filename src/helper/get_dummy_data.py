@@ -5,11 +5,10 @@ import re
 
 import requests
 import untangle
+from cfg import Cfg
+from consts import D
+from logs import logger_instance, save_traceback
 from tqdm import tqdm
-
-from helper.cfg import Cfg
-from helper.consts import D
-from helper.logs import logger_instance, save_traceback
 
 # logger のインスタンス作成
 L = logger_instance()
@@ -75,7 +74,7 @@ def get_kokkai_data(keyword: str) -> dict[str, str]:
     # クエリパラメータを辞書で定義
     params = {"maximumRecords": 50, "any": keyword}
     # リクエストを送信
-    response = requests.get(base_url, params=params)
+    response = requests.get(base_url, params=params, timeout=10)
     # エラーがあれば例外を発生させる
     response.raise_for_status()
     # response.text を untangle に渡す
@@ -121,7 +120,7 @@ def get_kokkai_text_from_api(url: str) -> str:
         if not issue_id:
             return "Could not extract issueID from the URL."
         api_url = f"https://kokkai.ndl.go.jp/api/speech?issueID={issue_id}&recordPacking=json"
-        response = requests.get(api_url)
+        response = requests.get(url=api_url, timeout=10)
         response.raise_for_status()
         data = response.json()
         if "speechRecord" not in data or not data["speechRecord"]:

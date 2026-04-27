@@ -67,6 +67,7 @@ gemma-2-2b:
   downloader:
     repo_id: lmstudio-community/gemma-2-2b-it-GGUF
     filename: gemma-2-2b-it-Q4_K_M.gguf
+  revision_hash: 6aa72da804ad76c5dc862867bfba6256de9172c7
   params:
     temperature: 0.1
     max_new_tokens: 512
@@ -85,6 +86,7 @@ gemma-2-9b:
   downloader:
     repo_id: bartowski/gemma-2-9b-it-GGUF
     filename: gemma-2-9b-it-Q4_K_M.gguf
+  revision_hash: d731033f3dc4018261fd39896e50984d398b4ac5
   params:
     temperature: 0.1
     max_new_tokens: 512
@@ -103,6 +105,7 @@ gemma-4-E4B-it-Q4_K_M:
   downloader:
     repo_id: lmstudio-community/gemma-4-E4B-it-GGUF
     filename: gemma-4-E4B-it-Q4_K_M.gguf
+  revision_hash: 53a691ddc52708042c56f80cdaf47f8a1daf051e
   params:
     temperature: 0.1
     max_new_tokens: 512
@@ -123,15 +126,19 @@ embedding: ruri-v3-130m
 multilingual-e5-small:
   downloader:
     repo_id: intfloat/multilingual-e5-small
+  revision_hash: 614241f622f53c4eeff9890bdc4f31cfecc418b3
 multilingual-e5-large:
   downloader:
     repo_id: intfloat/multilingual-e5-large
+  revision_hash: 3d7cfbdacd47fdda877c5cd8a79fbcc4f2a574f3
 ruri-v3-310m:
   downloader:
     repo_id: cl-nagoya/ruri-v3-310m
+  revision_hash: 18b60fb8c2b9df296fb4212bb7d23ef94e579cd3
 ruri-v3-130m:
   downloader:
     repo_id: cl-nagoya/ruri-v3-130m
+  revision_hash: e3114c6ee10dbab8b4b235fbc6dcf9dd4d5ac1a6
 
 
 #######################################################################################

@@ -8,15 +8,14 @@ os.environ["MKL_NUM_THREADS"] = "6"
 
 from pathlib import Path
 
+from cfg import Cfg
+from consts import D
 from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download, snapshot_download
 from llama_index.core import Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.llama_cpp import LlamaCPP
-
-from helper.cfg import Cfg
-from helper.consts import D
-from helper.logs import logger_instance, save_traceback
+from logs import logger_instance, save_traceback
 
 # logger のインスタンス作成
 L = logger_instance()
@@ -40,7 +39,9 @@ def main():
         dir_embed_model=dir_embed_model,
         path_llm_model=path_llm_model,
         embedding_downloader=cfg.embedding_downloader,
+        embedding_revision_hash=cfg.embedding_revision_hash,
         llm_downloader=cfg.llm_downloader,
+        llm_revision_hash=cfg.llm_revision_hash,
     )
 
     L.info("end")
@@ -78,7 +79,9 @@ class ModelBuilder:
             dir_embed_model=self.dir_embed_model,
             path_llm_model=self.path_llm_model,
             embedding_downloader=self.cfg.embedding_downloader,
+            embedding_revision_hash=self.cfg.embedding_revision_hash,
             llm_downloader=self.cfg.llm_downloader,
+            llm_revision_hash=self.cfg.llm_revision_hash,
         )
 
         L.info("モデル設定 (オフライン)")
@@ -100,7 +103,12 @@ class ModelBuilder:
 
 
 def download_models_if_needed(
-    dir_embed_model: Path, path_llm_model: Path, embedding_downloader: dict, llm_downloader: dict
+    dir_embed_model: Path,
+    path_llm_model: Path,
+    embedding_downloader: dict,
+    embedding_revision_hash: str,
+    llm_downloader: dict,
+    llm_revision_hash: str,
 ):
     """モデルが存在しない場合にダウンロードを実行する
 
@@ -108,7 +116,9 @@ def download_models_if_needed(
         dir_embed_model (Path): embedding モデルのあるディレクトリパス
         path_llm_model (Path): LLM モデルのあるディレクトリパス
         embedding_downloader (dict): embedding モデルをダウンロードするときに用いるパラメータ
+        embedding_revision_hash (str): _description_
         llm_downloader (dict): LLM モデルをダウンロードするときに用いるパラメータ
+        llm_revision_hash (str): _description_
     """
     L.info("start")
 
@@ -123,6 +133,7 @@ def download_models_if_needed(
             local_dir=dir_embed_model,
             local_dir_use_symlinks=False,
             token=token,
+            revision=embedding_revision_hash,
             **embedding_downloader,
         )
 
@@ -134,7 +145,10 @@ def download_models_if_needed(
         token = os.getenv(key="HF_TOKEN")
         # モデルダウンロード
         hf_hub_download(
-            local_dir=path_llm_model.parent, local_dir_use_symlinks=False, **llm_downloader
+            local_dir=path_llm_model.parent,
+            local_dir_use_symlinks=False,
+            revision=llm_revision_hash,
+            **llm_downloader,
         )
 
     L.info("end")
