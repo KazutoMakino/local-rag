@@ -140,7 +140,7 @@ def main():
 ###################################################################################################
 
 
-def build_dual_indices(cfg: Cfg)->tuple[VectorStoreIndex]:
+def build_dual_indices(cfg: Cfg) -> tuple[VectorStoreIndex]:
     """要約用テーブルと本文用テーブルを個別に構築
 
     Args:

@@ -26,7 +26,7 @@ class Cfg:
         self.dir_data: str = cfg["dir_data"]
         # ファイル更新を確認するための json `{repo.}/.cache/` からの相対パスを推奨）
         self.file_tracker: str = cfg["file_tracker"]
-        
+
         # # 最終的な RAG 用の設定値
         # 比較対象となるベクトル DB のテーブル名称
         self.text_table: str = cfg["text_table"]
@@ -34,13 +34,13 @@ class Cfg:
         self.query_str: str = cfg["query_str"]
         # テンプレート
         self.text_qa_template: str = cfg["text_qa_template"]
-        
+
         # # サマリー用の設定値
         # 比較対象となるベクトル DB のテーブル名称
         self.summary_table: str = cfg["summary_table"]
         # summary 作成用のプロンプト
         self.summary_prompt: str = cfg["summary_prompt"]
-        
+
         # # LLM / embedding モデル用の設定値
         # local LLM モデル
         self.llm_name: str = cfg["llm"]
@@ -49,7 +49,7 @@ class Cfg:
         # embedding モデル
         self.embedding_name: str = cfg["embedding"]
         self.embedding_downloader: dict = cfg[self.embedding_name]["downloader"]
-        
+
         # # その他の設定値
         # プロンプトに使用するパラメータ
         self.len_src_to_summary: int = cfg["len_src_to_summary"]
