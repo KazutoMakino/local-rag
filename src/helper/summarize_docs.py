@@ -11,8 +11,9 @@ import gc
 import re
 from pathlib import Path
 
-from helper.logs import logger_instance, save_traceback
+from helper.logs import logger_instance
 
+# logger のインスタンス作成
 L = logger_instance()
 
 
@@ -22,7 +23,15 @@ L = logger_instance()
 
 
 def generate_summary_txt(txt_file: Path, response_text: str) -> str:
-    """テキストから情報を抽出して .txt (要約) として保存"""
+    """テキストから情報を抽出して .txt (要約) として保存
+
+    Args:
+        txt_file (Path): 要約する前の .txt ファイルのパス
+        response_text (str): 要約する前の文字列
+
+    Returns:
+        str: _description_
+    """
     summary_file = txt_file.with_name(txt_file.stem + "_summary.txt")
 
     # シンプルな抽出処理

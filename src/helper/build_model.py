@@ -1,3 +1,5 @@
+"""モデル構築／ダウンロード"""
+
 import os
 
 # OpenMPのスレッド数、Intel MKL 系を制限
@@ -16,9 +18,7 @@ from helper.cfg import Cfg
 from helper.consts import D
 from helper.logs import logger_instance, save_traceback
 
-# .env 読み込み
-load_dotenv()
-
+# logger のインスタンス作成
 L = logger_instance()
 
 ###################################################################################################
@@ -29,12 +29,13 @@ L = logger_instance()
 def main():
     L.info("start")
 
+    # 初期設定
     cfg = Cfg()
-
     dir_embed_model = D().embedding / cfg.embedding_name
     path_llm_model = D().llm / cfg.llm_downloader["filename"]
     dir_embed_model.mkdir(parents=True, exist_ok=True)
 
+    # モデル構築／ダウンロード
     download_models_if_needed(
         dir_embed_model=dir_embed_model,
         path_llm_model=path_llm_model,
@@ -52,17 +53,23 @@ def main():
 
 class ModelBuilder:
     def __init__(self, cfg: Cfg, dir_embed_model: Path, path_llm_model: Path):
-        # ディレクトリ／ファイルパス設定
+        """ディレクトリ／ファイルパス設定
+
+        Args:
+            cfg (Cfg): cfg.yml をインスタンス化したもの
+            dir_embed_model (Path): embedding モデルのあるディレクトリパス
+            path_llm_model (Path): LLM モデルのあるディレクトリパス
+        """
+        self.cfg = cfg
         self.dir_embed_model: Path = dir_embed_model
         self.dir_embed_model.mkdir(parents=True, exist_ok=True)
         self.path_llm_model: Path = path_llm_model
-        self.cfg = cfg
 
     def build_model(self):
-        """モデル設定
+        """モデルが存在しない場合にダウンロードを実行する
 
         Returns:
-            Settings: _description_
+            Settings (Settings): モデルビルド後に llama_index.core.Settings オブジェクトとして返す
         """
         L.info("start")
 
@@ -98,18 +105,20 @@ def download_models_if_needed(
     """モデルが存在しない場合にダウンロードを実行する
 
     Args:
-        dir_embed_model (Path): _description_
-        path_llm_model (Path): _description_
-        embedding_downloader (dict): _description_
-        llm_downloader (dict): _description_
+        dir_embed_model (Path): embedding モデルのあるディレクトリパス
+        path_llm_model (Path): LLM モデルのあるディレクトリパス
+        embedding_downloader (dict): embedding モデルをダウンロードするときに用いるパラメータ
+        llm_downloader (dict): LLM モデルをダウンロードするときに用いるパラメータ
     """
     L.info("start")
 
     L.info("埋め込みモデルのチェックとダウンロード")
     if not (dir_embed_model / "config.json").exists():
         L.info(f"埋め込みモデルが見つからないため、ダウンロードします: {dir_embed_model}")
-
+        # .env 読み込み
+        load_dotenv()
         token = os.getenv(key="HF_TOKEN")
+        # モデルダウンロード
         snapshot_download(
             local_dir=dir_embed_model,
             local_dir_use_symlinks=False,
@@ -120,6 +129,10 @@ def download_models_if_needed(
     L.info("LLM (GGUFファイル単体) のチェックとダウンロード")
     if not path_llm_model.exists():
         L.info(f"LLMモデルが見つからないため、ダウンロードします: {path_llm_model}")
+        # .env 読み込み
+        load_dotenv()
+        token = os.getenv(key="HF_TOKEN")
+        # モデルダウンロード
         hf_hub_download(
             local_dir=path_llm_model.parent, local_dir_use_symlinks=False, **llm_downloader
         )

@@ -2,7 +2,6 @@
 
 import gc
 import re
-from pathlib import Path
 
 import requests
 import untangle
@@ -12,6 +11,7 @@ from helper.cfg import Cfg
 from helper.consts import D
 from helper.logs import logger_instance, save_traceback
 
+# logger のインスタンス作成
 L = logger_instance()
 
 #######################################################################################
@@ -38,6 +38,7 @@ class DataDownloader:
         pass
 
     def download_data(self):
+        """ダミーデータをダウンロード"""
         L.info("start")
 
         cfg = Cfg()
@@ -61,29 +62,26 @@ class DataDownloader:
 
 
 def get_kokkai_data(keyword: str) -> dict[str, str]:
-    """_summary_
+    """国会文書の ID と URL のペアを取得する
 
     Args:
-        keyword (str): _description_
+        keyword (str): 国会文書におけるデータベースから拾ってくる際に用いるキーワード
 
     Returns:
-        dict[str, str]: _description_
+        dict[str, str]: 国会文書の ID と URL のペア
     """
     # ベースとなるURL
     base_url = "https://kokkai.ndl.go.jp/api/1.0/speech"
-
     # クエリパラメータを辞書で定義
     params = {"maximumRecords": 100, "any": keyword}
-
     # リクエストを送信
     response = requests.get(base_url, params=params)
-    response.raise_for_status()  # エラーがあれば例外を発生させる
-
+    # エラーがあれば例外を発生させる
+    response.raise_for_status()
     # response.text を untangle に渡す
     obj = untangle.parse(response.text)
-
     dict_url: dict[str, str] = {}
-    # dataプロパティが存在するか確認しつつループ
+    # dataプロパティが存在するか確認 しつつループ
     if hasattr(obj, "data") and hasattr(obj.data, "records"):
         for record in obj.data.records.record:
             speech_record = record.recordData.speechRecord
@@ -95,13 +93,13 @@ def get_kokkai_data(keyword: str) -> dict[str, str]:
 
 
 def clean_text(text: str) -> str:
-    """_summary_
+    """不要な文字列を削除
 
     Args:
-        text (str): _description_
+        text (str): 文字列
 
     Returns:
-        str: _description_
+        str: 不要な部分が削除された文字列
     """
     text = re.sub(r"[\r─━・]", "", text)
     text = text.replace("　", " ")
@@ -110,13 +108,13 @@ def clean_text(text: str) -> str:
 
 
 def get_kokkai_text_from_api(url: str) -> str:
-    """_summary_
+    """ダミーデータをダウンロード
 
     Args:
-        url (str): _description_
+        url (str): 国会データの URL
 
     Returns:
-        str: _description_
+        str: 国会文書
     """
     try:
         issue_id = url.split("/")[-1]

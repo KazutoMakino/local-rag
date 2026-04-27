@@ -1,87 +1,128 @@
-# template_repository_python
+# Local RAG
 
-## 概要
+当該リポジトリは、**ローカル環境で CPU のみを用いて RAG (Retrieval-Augmented Generation) を実行する**ための実装例およびテンプレートです。
+Python プロジェクトの標準的な構成（`uv` による依存関係管理、`isort/ruff` による品質管理）を備えており、ハンズオン資料としても活用いただけます。
 
-Pythonプロジェクトの開始に必要な基本的な設定と構成を提供するテンプレートリポジトリです。  
-`uv`を用いた依存関係の管理、`pre-commit`を用いたコードのリンティング (`mypy`) およびフォーマット (`ruff`) の設定ファイルが含み、すぐに環境構築することが可能にします。
+## 📋 概要
 
-## 主な機能
+- **メイン実行コード**: `src/main.py`
+- **パッケージ管理**: `uv` (Windows スタンドアロン版)
+- **ソース管理**: GitHub CLI (`gh`)
+- **動作環境**:
+    - Windows 10/11 (PowerShell)
+    - ※ テスト環境: Arch Linux (Hyprland) にて動作確認済み
 
-* **依存関係管理:** `uv` が構成されており、依存関係の管理が容易です。
-* **pre-commit:** `pre-commit` が構成されており、コミット時に以下レンティングとフォーマットを実行し、コード品質を維持できます。
-* **リンティングとフォーマット:** `mypy`, `ruff` がプリセットされており、コード品質を維持できます。
+## 🛠️ 事前準備
 
-## 使い方
+本プロジェクトでは、ツールとして **GitHub CLI** および **uv** を使用します。未インストールの場合は、以下の手順で Windows 自体にインストールしてください（python はインストール済みの前提）。
 
-### テンプレートからリポジトリを作成する
+### 1. GitHub CLI (`gh`) のインストール
 
-1. このリポジトリをforkします。
-2.  新しいリポジトリを作成します。
-3.  "Repository template" でドロップダウンから上記リポジトリを選択します。
+[GitHub CLI 公式サイト](https://cli.github.com/)からインストーラーをダウンロードするか、`winget` を使用してインストールしてください。
 
-### ローカル環境のセットアップ
-
-上記作成したリポジトリをローカルにクローンします。
-
-```bash
-git clone https://github.com/your-username/your-new-repository.git
-cd your-new-repository
+```powershell
+winget install --id GitHub.cli
 ```
 
-### 依存関係のインストール
+もしも、例えば会社の規定などの影響で winget 経由で GitHub CLI がインストール不可の場合は、git を[公式サイト](https://git-scm.com/install/windows)からダウンロードし、git のユーザ名／メールアドレスを設定の後、以下コマンドにて clone してください。
 
-プロジェクトの依存関係をインストールします。  
-`uv`を使用する場合は、次のコマンドを実行します。
+```powershell
+git clone https://github.com/KazutoMakino/local-rag.git
+```
 
-```bash
+### 2. uv のインストール（スタンドアロン版）
+
+Python のライブラリとしてではなく、Windows のツールとしてインストールします。PowerShell で以下のコマンドを実行してください。
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+もしも、OS 全体にインストールしたくない場合は、以下のように python のライブラリとしてインストールすることも可能です。
+
+```powershell
+python -m pip install uv
+```
+
+インストール後、PowerShell を再起動するか環境変数を反映させて、uv --version が実行できることを確認してください。
+
+## 🚀 環境構築
+
+### 1. リポジトリのクローン
+
+GitHub CLI を用いてリポジトリをクローンします。
+
+```powershell
+gh repo clone KazutoMakino/local-rag
+cd local-rag
+```
+
+### 2. 依存関係のインストール
+
+プロジェクトに必要なライブラリをインストールし、仮想環境 (.venv) を作成します。
+
+```powershell
 uv sync
 ```
 
-※ パッケージ管理の`uv`がない場合は次のコマンドでインストールしてから上記実行してください。
+### 3. 仮想環境の有効化
 
-```bash
-pip install uv
-```
+PowerShell で以下のコマンドを実行して仮想環境に入ります。
 
-依存関係の追加／削除／更新するには次のコマンドで実行します。  
-(初期状態では主に`jupyterlab`,`pre-commit`,`ruff`,`uv`のパッケージが依存関係として入っており、`pyproject.toml`に記載されています。詳細な依存関係については`uv.lock`に記載されています)
-
-```bash
-uv add {package_name}
-uv remove {package_name}
-uv sync
-```
-
-### uvで構築した環境の入り方
-
-`uv`で構築した`.venv/`の環境に入るには以下コマンドで実行します。  
-(以下例はwindowsの場合。windows以外では `.venv/Scripts` を `.venv/bin` と置き換えてください)
-
-```bash
-# bash系の場合
-source .venv\Scripts\activate
-
-# コマンドプロンプトの場合
-.venv\Scripts\activate.bat
-
-# PowerShellの場合
+```powershell
 .venv\Scripts\activate.ps1
 ```
 
-### pre-commitの適用
+※ コマンドプロンプトの場合は `.venv\Scripts\activate`, linux などの場合はシェルに合わせて `source .venv/bin/activate.*` を実行することで、仮想環境が有効化されます。
 
-`pre-commit`は次のコマンドで有効化します。  
-(設定は `.pre-commit-config.yaml` に記載しています)
+## 🏃 実行方法
 
-```bash
-pre-commit install
-pre-commit autoupdate
+### メイン処理の実行
+
+RAG のメインロジックは src/main.py に集約されています。以下のコマンドで実行してください。
+
+```powershell
+python src/main.py
 ```
 
-### リンティングとフォーマット
+## 📂 ディレクトリ構成
+```
+.
+├── .github/          # GitHub Actions 等の設定
+├── src/              # ソースコード
+│    └── main.py       # メイン実行ファイル
+├── tests/            # テストコード
+├── pyproject.toml    # プロジェクト設定・依存関係定義
+├── uv.lock           # 依存関係のロックファイル
+└── README.md         # 本ファイル
+```
 
-`pre-commit`を設定することによりコミット時にコードのリンティングとフォーマットが自動で行われるのですが、コマンドラインからマニュアル実行した場合は以下のコマンドを実行します。
+## ⚠️ トラブルシューティング：ビルド環境について
+
+`llama-cpp-python` を含むパッケージをインストールする際、OSごとに以下の開発ツールが必要となります。`uv sync` でビルドエラーが発生した場合は、各OSの手順に従ってツールをインストール後、再び `uv sync` してください。
+
+### Windows
+
+`llama-cpp-python` のビルドには C++ コンパイラが必要です。
+
+1. **Visual Studio Build Tools** をインストールしてください。
+   - インストール時、「C++ によるデスクトップ開発」ワークロードを選択してください。
+2. Windows SDK もあわせてインストールしてください。
+
+### Ubuntu / Debian
+
+ビルドに必要なコンパイラとヘッダファイルをインストールします。
+```bash
+sudo apt update
+sudo apt install build-essential python3-dev
+```
+
+### Arch Linux
 
 ```bash
-pre-commit run --all-files
+sudo pacman -S base-devel
 ```
+
+## ⚖️ ライセンス
+
+本プロジェクトは [MIT License](./LICENSE) のもとで公開されています。
