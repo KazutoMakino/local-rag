@@ -19,6 +19,8 @@ from llama_index.core import (
     StorageContext,
     VectorStoreIndex,
 )
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.node_parser import SentenceSplitter
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from tqdm import tqdm
 
@@ -142,56 +144,118 @@ def main():
 
 
 def build_dual_indices(cfg: Cfg) -> tuple[VectorStoreIndex]:
-    """要約用テーブルと本文用テーブルを個別に構築
+    """要約用・本文用テーブルを差分更新する。
+    新規ファイルが存在しない場合は、インデックスのロードのみを行い追加処理をスキップする。
 
     Args:
-        cfg (Cfg): cfg.yml で記載した設定値
+        cfg (Cfg): cfg.yml に記載の設定値
 
     Returns:
-        tuple[VectorStoreIndex]: 要約ファイルと元データファイルの VectorStoreIndex
+        tuple[VectorStoreIndex]: 要約と本文の VectorStoreIndex
     """
     L.info("start")
 
-    L.info("重複する名称のテーブルを削除")
     db_path = D().lancedb
     db = lancedb.connect(str(db_path))
-    for t in ["summary_table", "text_table"]:
-        if t in db.list_tables():
-            db.drop_table(t)
 
-    data_dir = D().data / cfg.dir_data
-    all_files = sorted(data_dir.rglob("*.txt"))
+    L.info("既存テーブルのリストを取得")
+    res = db.list_tables()
+    existing_tables = res.tables if hasattr(res, "tables") else []
 
-    L.info("本文インデックス作成中...")
-    text_files = [str(f) for f in all_files if not f.name.endswith("_summary.txt")]
-    text_reader = SimpleDirectoryReader(input_files=text_files, file_metadata=get_meta)
+    def _get_new_files(all_files, table_name):
+        """DBのテーブルを直接参照し、未登録のファイルパスを抽出する"""
+        if table_name not in existing_tables:
+            return all_files
+
+        try:
+            L.info("全件のデータを取得")
+            tbl = db.open_table(table_name)
+            df = tbl.to_pandas()
+
+            if df.empty:
+                return all_files
+
+            L.info("カラム名に直接 file_path があるか、metadata カラムの中にあるかを確認")
+            if "file_path" in df.columns:
+                registered_paths = set(df["file_path"].astype(str).tolist())
+            elif "metadata" in df.columns:
+                registered_paths = set(
+                    df["metadata"]
+                    .apply(lambda x: x.get("file_path") if isinstance(x, dict) else None)
+                    .dropna()
+                    .tolist()
+                )
+            else:
+                L.warning(f"テーブル '{table_name}' にパス情報が見つかりません。全件対象とします。")
+                return all_files
+
+            return [f for f in all_files if str(f.resolve()) not in registered_paths]
+
+        except Exception as e:
+            L.warning(f"既存パスの照合中にエラーが発生しました（全件対象とします）: {e}")
+            return all_files
+
+    # 共通の変換設定 (Pipeline用)
+    transformations = [
+        SentenceSplitter(chunk_size=1024, chunk_overlap=100),  # 高速化のためサイズ調整
+        Settings.embed_model,
+    ]
+
+    L.info("本文インデックスの処理")
+    all_text_files = sorted((D().data / cfg.dir_data).rglob("*.txt"))
+    all_text_files = [f for f in all_text_files if not f.name.endswith("_summary.txt")]
+    new_text_files = _get_new_files(all_text_files, cfg.text_table)
     text_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=cfg.text_table)
-    text_docs = text_reader.load_data()
-    for doc in text_docs:
-        doc.doc_id = doc.metadata["file_path"]
-    full_text_index = VectorStoreIndex.from_documents(
-        text_docs,
-        storage_context=StorageContext.from_defaults(vector_store=text_vector_store),
-        show_progress=True,
-    )
+    if not new_text_files:
+        L.info(f"本文インデックス ({cfg.text_table}): 更新はありません。既存データをロードします。")
+        full_text_index = VectorStoreIndex.from_vector_store(
+            vector_store=text_vector_store,
+            storage_context=StorageContext.from_defaults(vector_store=text_vector_store),
+        )
+    else:
+        L.info(
+            f"本文インデックス ({cfg.text_table}): {len(new_text_files)} 件の新規ファイルを追加中..."
+        )
+        reader = SimpleDirectoryReader(input_files=new_text_files, file_metadata=get_meta)
+        docs = reader.load_data()
+        for doc in docs:
+            doc.doc_id = doc.metadata["file_path"]
+        pipeline = IngestionPipeline(
+            transformations=transformations, vector_store=text_vector_store
+        )
+        pipeline.run(documents=docs, show_progress=True)
+        full_text_index = VectorStoreIndex.from_vector_store(text_vector_store)
 
-    L.info("要約インデックス作成中...")
-    summary_files = [str(f) for f in all_files if f.name.endswith("_summary.txt")]
-    summary_reader = SimpleDirectoryReader(input_files=summary_files, file_metadata=get_meta)
+    L.info("要約インデックスの処理")
+    all_summary_files = sorted((D().data / cfg.dir_data).glob("*_summary.txt"))
+    new_summary_files = _get_new_files(all_summary_files, cfg.summary_table)
     summary_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=cfg.summary_table)
-    summary_docs = summary_reader.load_data()
-    for doc in summary_docs:
-        doc.doc_id = doc.metadata["file_path"]
-    summary_index = VectorStoreIndex.from_documents(
-        summary_docs,
-        storage_context=StorageContext.from_defaults(vector_store=summary_vector_store),
-        show_progress=True,
-    )
+    if not new_summary_files:
+        L.info(
+            f"要約インデックス ({cfg.summary_table}): 更新はありません。既存データをロードします。"
+        )
+        summary_index = VectorStoreIndex.from_vector_store(
+            vector_store=summary_vector_store,
+            storage_context=StorageContext.from_defaults(vector_store=summary_vector_store),
+        )
+    else:
+        L.info(
+            f"要約インデックス ({cfg.summary_table}): {len(new_summary_files)} 件の新規要約を追加中..."
+        )
+        reader = SimpleDirectoryReader(input_files=new_summary_files, file_metadata=get_meta)
+        docs = reader.load_data()
+        for doc in docs:
+            doc.doc_id = doc.metadata["file_path"]
+
+        pipeline = IngestionPipeline(
+            transformations=transformations, vector_store=summary_vector_store
+        )
+        pipeline.run(documents=docs, show_progress=True)
+
+        summary_index = VectorStoreIndex.from_vector_store(summary_vector_store)
 
     gc.collect()
-
     L.info("end")
-
     return summary_index, full_text_index
 
 
