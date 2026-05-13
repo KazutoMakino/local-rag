@@ -20,5 +20,4 @@ class D(BaseModel):
     models: Path = cache / "models"
     llm: Path = models / "llm"
     embedding: Path = models / "embedding"
-    storage: Path = cache / "storage"
     lancedb: Path = cache / "lancedb"
