@@ -7,12 +7,9 @@ import requests
 import untangle
 from tqdm import tqdm
 
-from helper.cfg import Cfg
-from helper.consts import D
-from helper.logs import logger_instance, save_traceback
-
-# logger のインスタンス作成
-L = logger_instance()
+from helper.cfg import CFG
+from helper.consts import DIRS
+from helper.logs import L, save_traceback
 
 #######################################################################################
 # main
@@ -34,15 +31,11 @@ def main() -> None:
 
 
 class DataDownloader:
-    def __init__(self):
-        pass
-
     def download_data(self):
         """ダミーデータをダウンロード"""
         L.info("start")
 
-        cfg = Cfg()
-        dir_save = D().data / cfg.dir_data
+        dir_save = DIRS.data / CFG.dir_data
         dir_save.mkdir(parents=True, exist_ok=True)
         dict_url = get_kokkai_data(keyword="スタートアップ")
         for name, url in tqdm(dict_url.items(), dynamic_ncols=True):

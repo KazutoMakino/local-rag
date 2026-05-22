@@ -25,15 +25,13 @@ from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from tqdm import tqdm
 
 from helper.build_model import ModelBuilder
-from helper.cfg import Cfg
-from helper.consts import D
+from helper.cfg import CFG,Cfg
+from helper.consts import DIRS
 from helper.directory_manager import mkdir_all
 from helper.get_dummy_data import DataDownloader
-from helper.logs import logger_instance, save_traceback
+from helper.logs import L, save_traceback
 from helper.summarize_docs import generate_summary_txt
 
-# logger のインスタンス作成
-L = logger_instance()
 
 ###################################################################################################
 # main
@@ -44,7 +42,6 @@ def main():
     L.info("start")
 
     mkdir_all()
-    cfg = Cfg()
     gc.collect()
 
     L.info("ダミーデータのダウンロード")
@@ -53,15 +50,14 @@ def main():
 
     L.info("モデル設定")
     model_builder = ModelBuilder(
-        cfg=cfg,
-        dir_embed_model=D().embedding / cfg.embedding_name,
-        path_llm_model=D().llm / cfg.llm_downloader["filename"],
+        dir_embed_model=DIRS.embedding / CFG.embedding_name,
+        path_llm_model=DIRS.llm / CFG.llm_downloader["filename"],
     )
     model_builder.build_model()
     gc.collect()
 
     L.info("要約生成処理")
-    txt_files = sorted((D().data / cfg.dir_data).glob("*.txt"))
+    txt_files = sorted((DIRS.data / CFG.dir_data).glob("*.txt"))
     for txt_file in tqdm(txt_files, desc="Summarizing", dynamic_ncols=True):
         if txt_file.name.endswith("_summary.txt"):
             continue
@@ -70,20 +66,20 @@ def main():
             continue
         with txt_file.open(mode="r", encoding="utf-8") as f:
             content = f.read()
-        prompt = cfg.summary_prompt.format(text=content[: cfg.len_src_to_summary])
+        prompt = CFG.summary_prompt.format(text=content[: CFG.len_src_to_summary])
         response = Settings.llm.complete(prompt=prompt)
         generate_summary_txt(txt_file, response.text)
         gc.collect()
 
     L.info("インデックス構築")
-    summary_index, full_text_index = build_dual_indices(cfg)
+    summary_index, full_text_index = build_dual_indices()
     gc.collect()
 
     L.info("二段階検索の実行")
 
     L.info("要約インデックスで関連ファイルパスを特定")
-    summary_retriever = summary_index.as_retriever(similarity_top_k=cfg.similarity_top_k)
-    summary_nodes = summary_retriever.retrieve(cfg.query_str)
+    summary_retriever = summary_index.as_retriever(similarity_top_k=CFG.similarity_top_k)
+    summary_nodes = summary_retriever.retrieve(CFG.query_str)
     gc.collect()
 
     L.info("検索対象パスの抽出 (メタデータの file_path を使用)")
@@ -104,20 +100,20 @@ def main():
     # 検索対象ノードが空でないか確認
     if len(target_paths) == 0:
         L.info(
-            f"検索クエリ: 「{cfg.query_str}」 に合致する情報が記載されていそうなファイルはありませんでした。"
+            f"検索クエリ: 「{CFG.query_str}」 に合致する情報が記載されていそうなファイルはありませんでした。"
         )
         return
 
     L.info("本文インデックスにフィルタを適用してRAG実行")
     query_engine = full_text_index.as_query_engine(
         filters=None,
-        similarity_top_k=cfg.similarity_top_k,
-        text_qa_template=PromptTemplate(template=cfg.text_qa_template),
-        response_mode=cfg.response_mode,
-        streaming=cfg.streaming,
+        similarity_top_k=CFG.similarity_top_k,
+        text_qa_template=PromptTemplate(template=CFG.text_qa_template),
+        response_mode=CFG.response_mode,
+        streaming=CFG.streaming,
     )
 
-    response = query_engine.query(cfg.query_str)
+    response = query_engine.query(CFG.query_str)
     gc.collect()
 
     L.info("ストリームを逐次出力")
@@ -128,10 +124,10 @@ def main():
     print()
     L.info(f"回答： {full_res}")
 
-    path_output = D().output / "output.txt"
+    path_output = DIRS.output / "output.txt"
     with path_output.open(mode="w", encoding="utf-8") as f:
         f.write(full_res)
-    shutil.copy2(src=D().helper / "cfg.yml", dst=D().output)
+    shutil.copy2(src=DIRS.helper / "cfg.yml", dst=DIRS.output)
 
     gc.collect()
 
@@ -143,19 +139,16 @@ def main():
 ###################################################################################################
 
 
-def build_dual_indices(cfg: Cfg) -> tuple[VectorStoreIndex]:
+def build_dual_indices() -> tuple[VectorStoreIndex]:
     """要約用・本文用テーブルを差分更新する。
     新規ファイルが存在しない場合は、インデックスのロードのみを行い追加処理をスキップする。
-
-    Args:
-        cfg (Cfg): cfg.yml に記載の設定値
 
     Returns:
         tuple[VectorStoreIndex]: 要約と本文の VectorStoreIndex
     """
     L.info("start")
 
-    db_path = D().lancedb
+    db_path = DIRS.lancedb
     db = lancedb.connect(str(db_path))
 
     L.info("既存テーブルのリストを取得")
@@ -202,19 +195,19 @@ def build_dual_indices(cfg: Cfg) -> tuple[VectorStoreIndex]:
     ]
 
     L.info("本文インデックスの処理")
-    all_text_files = sorted((D().data / cfg.dir_data).rglob("*.txt"))
+    all_text_files = sorted((DIRS.data / CFG.dir_data).rglob("*.txt"))
     all_text_files = [f for f in all_text_files if not f.name.endswith("_summary.txt")]
-    new_text_files = _get_new_files(all_text_files, cfg.text_table)
-    text_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=cfg.text_table)
+    new_text_files = _get_new_files(all_text_files, CFG.text_table)
+    text_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=CFG.text_table)
     if not new_text_files:
-        L.info(f"本文インデックス ({cfg.text_table}): 更新はありません。既存データをロードします。")
+        L.info(f"本文インデックス ({CFG.text_table}): 更新はありません。既存データをロードします。")
         full_text_index = VectorStoreIndex.from_vector_store(
             vector_store=text_vector_store,
             storage_context=StorageContext.from_defaults(vector_store=text_vector_store),
         )
     else:
         L.info(
-            f"本文インデックス ({cfg.text_table}): {len(new_text_files)} 件の新規ファイルを追加中..."
+            f"本文インデックス ({CFG.text_table}): {len(new_text_files)} 件の新規ファイルを追加中..."
         )
         reader = SimpleDirectoryReader(input_files=new_text_files, file_metadata=get_meta)
         docs = reader.load_data()
@@ -227,12 +220,12 @@ def build_dual_indices(cfg: Cfg) -> tuple[VectorStoreIndex]:
         full_text_index = VectorStoreIndex.from_vector_store(text_vector_store)
 
     L.info("要約インデックスの処理")
-    all_summary_files = sorted((D().data / cfg.dir_data).glob("*_summary.txt"))
-    new_summary_files = _get_new_files(all_summary_files, cfg.summary_table)
-    summary_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=cfg.summary_table)
+    all_summary_files = sorted((DIRS.data / CFG.dir_data).glob("*_summary.txt"))
+    new_summary_files = _get_new_files(all_summary_files, CFG.summary_table)
+    summary_vector_store = LanceDBVectorStore(uri=str(db_path), table_name=CFG.summary_table)
     if not new_summary_files:
         L.info(
-            f"要約インデックス ({cfg.summary_table}): 更新はありません。既存データをロードします。"
+            f"要約インデックス ({CFG.summary_table}): 更新はありません。既存データをロードします。"
         )
         summary_index = VectorStoreIndex.from_vector_store(
             vector_store=summary_vector_store,
@@ -240,7 +233,7 @@ def build_dual_indices(cfg: Cfg) -> tuple[VectorStoreIndex]:
         )
     else:
         L.info(
-            f"要約インデックス ({cfg.summary_table}): {len(new_summary_files)} 件の新規要約を追加中..."
+            f"要約インデックス ({CFG.summary_table}): {len(new_summary_files)} 件の新規要約を追加中..."
         )
         reader = SimpleDirectoryReader(input_files=new_summary_files, file_metadata=get_meta)
         docs = reader.load_data()
