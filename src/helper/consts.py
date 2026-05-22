@@ -5,9 +5,14 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+#######################################################################################
+# def
+#######################################################################################
+
 
 class D(BaseModel):
     """Directory paths."""
+    model_config={"frozen":True}
 
     repo: Path = Path(__file__).resolve().parent.parent.parent
     src: Path = repo / "src"
@@ -21,3 +26,9 @@ class D(BaseModel):
     llm: Path = models / "llm"
     embedding: Path = models / "embedding"
     lancedb: Path = cache / "lancedb"
+
+#######################################################################################
+# instance
+#######################################################################################
+
+DIRS:D=D()

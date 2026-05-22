@@ -4,9 +4,11 @@ from pathlib import Path
 
 from yaml import safe_load
 
-from helper.logs import logger_instance
+from helper.logs import L
 
-L = logger_instance()
+#######################################################################################
+# def
+#######################################################################################
 
 
 class Cfg:
@@ -19,7 +21,7 @@ class Cfg:
             L.error(f"not found: {path_cfg}")
             raise FileNotFoundError
         with path_cfg.open(mode="r") as f:
-            cfg = safe_load(f)
+            cfg:dict = safe_load(f)
 
         # # パス
         # データの所在（`{repo.}/data/` からの相対パスを推奨）
@@ -60,3 +62,10 @@ class Cfg:
         self.response_mode: str = cfg["response_mode"]
         # RAG で取得可能なファイル形式 (word における旧式の拡張子 .doc は読み取り不可)
         self.list_file_ext: str = cfg["list_file_ext"]
+
+#######################################################################################
+# instance
+#######################################################################################
+
+CFG:Cfg=Cfg()
+

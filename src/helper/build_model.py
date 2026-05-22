@@ -15,12 +15,10 @@ from llama_index.core import Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.llama_cpp import LlamaCPP
 
-from helper.cfg import Cfg
-from helper.consts import D
-from helper.logs import logger_instance, save_traceback
+from helper.cfg import CFG
+from helper.consts import DIRS
+from helper.logs import L, save_traceback
 
-# logger のインスタンス作成
-L = logger_instance()
 
 ###################################################################################################
 # main
@@ -31,19 +29,18 @@ def main():
     L.info("start")
 
     # 初期設定
-    cfg = Cfg()
-    dir_embed_model = D().embedding / cfg.embedding_name
-    path_llm_model = D().llm / cfg.llm_downloader["filename"]
+    dir_embed_model = DIRS.embedding / CFG.embedding_name
+    path_llm_model = DIRS.llm / CFG.llm_downloader["filename"]
     dir_embed_model.mkdir(parents=True, exist_ok=True)
 
     # モデル構築／ダウンロード
     download_models_if_needed(
         dir_embed_model=dir_embed_model,
         path_llm_model=path_llm_model,
-        embedding_downloader=cfg.embedding_downloader,
-        embedding_revision_hash=cfg.embedding_revision_hash,
-        llm_downloader=cfg.llm_downloader,
-        llm_revision_hash=cfg.llm_revision_hash,
+        embedding_downloader=CFG.embedding_downloader,
+        embedding_revision_hash=CFG.embedding_revision_hash,
+        llm_downloader=CFG.llm_downloader,
+        llm_revision_hash=CFG.llm_revision_hash,
     )
 
     L.info("end")
@@ -55,15 +52,13 @@ def main():
 
 
 class ModelBuilder:
-    def __init__(self, cfg: Cfg, dir_embed_model: Path, path_llm_model: Path):
+    def __init__(self, dir_embed_model: Path, path_llm_model: Path):
         """ディレクトリ／ファイルパス設定
 
         Args:
-            cfg (Cfg): cfg.yml をインスタンス化したもの
             dir_embed_model (Path): embedding モデルのあるディレクトリパス
             path_llm_model (Path): LLM モデルのあるディレクトリパス
         """
-        self.cfg = cfg
         self.dir_embed_model: Path = dir_embed_model
         self.dir_embed_model.mkdir(parents=True, exist_ok=True)
         self.path_llm_model: Path = path_llm_model
@@ -80,10 +75,10 @@ class ModelBuilder:
         download_models_if_needed(
             dir_embed_model=self.dir_embed_model,
             path_llm_model=self.path_llm_model,
-            embedding_downloader=self.cfg.embedding_downloader,
-            embedding_revision_hash=self.cfg.embedding_revision_hash,
-            llm_downloader=self.cfg.llm_downloader,
-            llm_revision_hash=self.cfg.llm_revision_hash,
+            embedding_downloader=CFG.embedding_downloader,
+            embedding_revision_hash=CFG.embedding_revision_hash,
+            llm_downloader=CFG.llm_downloader,
+            llm_revision_hash=CFG.llm_revision_hash,
         )
 
         L.info("モデル設定 (オフライン)")
@@ -91,7 +86,7 @@ class ModelBuilder:
             model_name=str(self.dir_embed_model), local_files_only=True
         )
         Settings.llm = LlamaCPP(
-            model_path=str(self.path_llm_model), verbose=False, **self.cfg.llm_params
+            model_path=str(self.path_llm_model), verbose=False, **CFG.llm_params
         )
 
         L.info("end")

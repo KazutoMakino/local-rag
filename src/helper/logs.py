@@ -5,6 +5,9 @@ from logging import INFO, FileHandler, Formatter, Logger, StreamHandler, getLogg
 from pathlib import Path
 from traceback import print_exc
 
+#######################################################################################
+# def
+#######################################################################################
 
 def logger_instance() -> Logger:
     """Get logger instance.
@@ -44,3 +47,9 @@ def save_traceback() -> None:
         print(f"{datetime.datetime.now()}", file=f)
         print_exc(limit=None, file=f)
         print("", file=f)
+
+#######################################################################################
+# instance
+#######################################################################################
+
+L:Logger=logger_instance()
