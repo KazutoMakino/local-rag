@@ -5,11 +5,10 @@ import re
 
 import requests
 import untangle
-from tqdm import tqdm
-
 from helper.cfg import CFG
 from helper.consts import DIRS
 from helper.logs import L, save_traceback
+from tqdm import tqdm
 
 #######################################################################################
 # main

@@ -10,15 +10,13 @@ os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 from pathlib import Path
 
 from dotenv import load_dotenv
+from helper.cfg import CFG
+from helper.consts import DIRS
+from helper.logs import L, save_traceback
 from huggingface_hub import hf_hub_download, snapshot_download
 from llama_index.core import Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.llama_cpp import LlamaCPP
-
-from helper.cfg import CFG
-from helper.consts import DIRS
-from helper.logs import L, save_traceback
-
 
 ###################################################################################################
 # main
