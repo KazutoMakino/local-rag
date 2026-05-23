@@ -12,6 +12,13 @@ import shutil
 from pathlib import Path
 
 import lancedb
+from helper.build_model import ModelBuilder
+from helper.cfg import CFG, Cfg
+from helper.consts import DIRS
+from helper.directory_manager import mkdir_all
+from helper.get_dummy_data import DataDownloader
+from helper.logs import L, save_traceback
+from helper.summarize_docs import generate_summary_txt
 from llama_index.core import (
     PromptTemplate,
     Settings,
@@ -23,15 +30,6 @@ from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from tqdm import tqdm
-
-from helper.build_model import ModelBuilder
-from helper.cfg import CFG,Cfg
-from helper.consts import DIRS
-from helper.directory_manager import mkdir_all
-from helper.get_dummy_data import DataDownloader
-from helper.logs import L, save_traceback
-from helper.summarize_docs import generate_summary_txt
-
 
 ###################################################################################################
 # main

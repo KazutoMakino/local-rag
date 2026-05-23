@@ -12,7 +12,8 @@ from pydantic import BaseModel
 
 class D(BaseModel):
     """Directory paths."""
-    model_config={"frozen":True}
+
+    model_config = {"frozen": True}
 
     repo: Path = Path(__file__).resolve().parent.parent.parent
     src: Path = repo / "src"
@@ -27,8 +28,9 @@ class D(BaseModel):
     embedding: Path = models / "embedding"
     lancedb: Path = cache / "lancedb"
 
+
 #######################################################################################
 # instance
 #######################################################################################
 
-DIRS:D=D()
+DIRS: D = D()
